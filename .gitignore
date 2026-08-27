@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated/uploads
+uploads/
+processed/
+*.log
+
+# ML/model artifacts if needed later
+models/*.pt
+models/*.pth
