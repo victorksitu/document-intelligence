@@ -7,6 +7,7 @@ local JPG/PNG path
     -> validate and load with OpenCV
     -> resize only if the image exceeds max dimensions
     -> convert to grayscale
+    -> optionally apply binary thresholding
     -> save the processed image locally
 ```
 
@@ -16,6 +17,12 @@ Run the sample preprocessing command from the repository root:
 python -m backend.scripts.preprocess_image sample_data/synthetic/synthetic_receipt.png processed/synthetic_receipt_grayscale.png --max-width 600 --max-height 600
 ```
 
+Run the same sample with thresholding enabled:
+
+```bash
+python -m backend.scripts.preprocess_image sample_data/synthetic/synthetic_receipt.png processed/synthetic_receipt_thresholded.png --max-width 600 --max-height 600 --threshold --threshold-value 127
+```
+
 The output file is written to `processed/`, which is intentionally ignored by Git.
 
 ## Current Choices
@@ -23,11 +30,11 @@ The output file is written to `processed/`, which is intentionally ignored by Gi
 - The original input image is preserved.
 - Resizing only downsizes large images; it does not upscale small images.
 - Grayscale conversion removes color channels and keeps brightness information.
+- Binary thresholding is optional so grayscale and black-and-white outputs can be compared.
 - The save helper accepts `.jpg`, `.jpeg`, and `.png` outputs.
 
 ## Not Implemented Yet
 
-- thresholding
 - denoising
 - deskewing or rotation correction
 - OCR

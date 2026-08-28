@@ -51,14 +51,47 @@ def to_grayscale(image: np.ndarray) -> np.ndarray:
     raise ValueError(f"Expected a 1, 3, or 4 channel image, got {channels} channels")
 
 
+def apply_binary_threshold(
+    image: np.ndarray,
+    threshold_value: int = 127,
+    max_value: int = 255,
+) -> np.ndarray:
+    """Convert a grayscale image to black-and-white using one cutoff value."""
+    _validate_image_array(image)
+
+    if image.ndim != 2:
+        raise ValueError("thresholding requires a grayscale image")
+
+    if not 0 <= threshold_value <= 255:
+        raise ValueError("threshold_value must be between 0 and 255")
+
+    if not 1 <= max_value <= 255:
+        raise ValueError("max_value must be between 1 and 255")
+
+    _threshold, thresholded = cv2.threshold(
+        image,
+        threshold_value,
+        max_value,
+        cv2.THRESH_BINARY,
+    )
+    return thresholded
+
+
 def preprocess_image(
     image: np.ndarray,
     max_width: int = 1600,
     max_height: int = 1600,
+    apply_threshold: bool = False,
+    threshold_value: int = 127,
 ) -> np.ndarray:
-    """Apply the first preprocessing slice: resize if needed, then grayscale."""
+    """Resize if needed, convert to grayscale, and optionally threshold."""
     resized = resize_if_needed(image, max_width=max_width, max_height=max_height)
-    return to_grayscale(resized)
+    grayscale = to_grayscale(resized)
+
+    if apply_threshold:
+        return apply_binary_threshold(grayscale, threshold_value=threshold_value)
+
+    return grayscale
 
 
 def save_processed_image(image: np.ndarray, output_path: str | Path) -> Path:

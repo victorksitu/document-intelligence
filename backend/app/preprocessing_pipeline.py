@@ -9,6 +9,8 @@ def preprocess_local_image(
     output_path: str | Path,
     max_width: int = 1600,
     max_height: int = 1600,
+    apply_threshold: bool = False,
+    threshold_value: int = 127,
 ) -> Path:
     """Load a local image, preprocess it, and save the processed output."""
     image = load_image(input_path)
@@ -16,5 +18,7 @@ def preprocess_local_image(
         image,
         max_width=max_width,
         max_height=max_height,
+        apply_threshold=apply_threshold,
+        threshold_value=threshold_value,
     )
     return save_processed_image(processed_image, output_path)

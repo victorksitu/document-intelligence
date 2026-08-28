@@ -41,6 +41,25 @@ def test_preprocess_local_image_saves_grayscale_output() -> None:
         assert reloaded.dtype == np.uint8
 
 
+def test_preprocess_local_image_can_save_thresholded_output() -> None:
+    with local_temp_dir() as temp_dir:
+        input_path = temp_dir / "document.png"
+        output_path = temp_dir / "thresholded.png"
+        original = np.array([[[0, 0, 0], [200, 200, 200]]], dtype=np.uint8)
+        assert cv2.imwrite(str(input_path), original)
+
+        preprocess_local_image(
+            input_path,
+            output_path,
+            apply_threshold=True,
+            threshold_value=127,
+        )
+        reloaded = cv2.imread(str(output_path), cv2.IMREAD_GRAYSCALE)
+
+        assert reloaded is not None
+        assert reloaded.tolist() == [[0, 255]]
+
+
 def test_preprocess_local_image_rejects_missing_input() -> None:
     with local_temp_dir() as temp_dir:
         input_path = temp_dir / "missing.png"

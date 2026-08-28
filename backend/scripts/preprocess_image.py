@@ -24,6 +24,17 @@ def parse_args() -> Namespace:
         default=1600,
         help="Maximum output height before grayscale conversion.",
     )
+    parser.add_argument(
+        "--threshold",
+        action="store_true",
+        help="Convert the grayscale image to black-and-white using a fixed cutoff.",
+    )
+    parser.add_argument(
+        "--threshold-value",
+        type=int,
+        default=127,
+        help="Pixel cutoff for thresholding. Pixels above this become white.",
+    )
     return parser.parse_args()
 
 
@@ -34,6 +45,8 @@ def main() -> None:
         args.output_path,
         max_width=args.max_width,
         max_height=args.max_height,
+        apply_threshold=args.threshold,
+        threshold_value=args.threshold_value,
     )
     print(f"Saved processed image to {saved_path}")
 

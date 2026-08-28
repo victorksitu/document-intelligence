@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from backend.app.preprocessing import (
+    apply_binary_threshold,
     preprocess_image,
     resize_if_needed,
     save_processed_image,
@@ -74,6 +75,37 @@ def test_preprocess_image_resizes_then_converts_to_grayscale() -> None:
 
     assert processed.shape == (50, 100)
     assert processed.dtype == np.uint8
+
+
+def test_apply_binary_threshold_converts_grayscale_to_black_and_white() -> None:
+    image = np.array([[0, 127, 128, 255]], dtype=np.uint8)
+
+    thresholded = apply_binary_threshold(image, threshold_value=127)
+
+    assert thresholded.tolist() == [[0, 0, 255, 255]]
+    assert thresholded.dtype == np.uint8
+
+
+def test_apply_binary_threshold_rejects_color_images() -> None:
+    image = np.zeros((10, 20, 3), dtype=np.uint8)
+
+    with pytest.raises(ValueError, match="requires a grayscale image"):
+        apply_binary_threshold(image)
+
+
+def test_apply_binary_threshold_rejects_invalid_threshold_value() -> None:
+    image = np.zeros((10, 20), dtype=np.uint8)
+
+    with pytest.raises(ValueError, match="threshold_value"):
+        apply_binary_threshold(image, threshold_value=300)
+
+
+def test_preprocess_image_can_apply_threshold_after_grayscale() -> None:
+    image = np.array([[0, 128, 255]], dtype=np.uint8)
+
+    processed = preprocess_image(image, apply_threshold=True, threshold_value=127)
+
+    assert processed.tolist() == [[0, 255, 255]]
 
 
 def test_save_processed_image_writes_readable_png() -> None:
