@@ -1,5 +1,9 @@
+from pathlib import Path
+
 import cv2
 import numpy as np
+
+SUPPORTED_OUTPUT_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 
 
 def resize_if_needed(
@@ -57,6 +61,22 @@ def preprocess_image(
     return to_grayscale(resized)
 
 
+def save_processed_image(image: np.ndarray, output_path: str | Path) -> Path:
+    """Save a processed image to a supported local image path."""
+    _validate_image_array(image)
+    path = _validate_output_image_path(output_path)
+
+    try:
+        saved = cv2.imwrite(str(path), image)
+    except cv2.error as exc:
+        raise ValueError(f"Image could not be saved to: {path}") from exc
+
+    if not saved:
+        raise ValueError(f"Image could not be saved to: {path}")
+
+    return path
+
+
 def _validate_image_array(image: np.ndarray) -> None:
     if not isinstance(image, np.ndarray):
         raise TypeError("image must be a NumPy array")
@@ -66,3 +86,25 @@ def _validate_image_array(image: np.ndarray) -> None:
 
     if image.ndim not in (2, 3):
         raise ValueError("image must be a 2D grayscale or 3D color array")
+
+
+def _validate_output_image_path(output_path: str | Path) -> Path:
+    path = Path(output_path)
+
+    if path.suffix.lower() not in SUPPORTED_OUTPUT_IMAGE_EXTENSIONS:
+        supported = ", ".join(sorted(SUPPORTED_OUTPUT_IMAGE_EXTENSIONS))
+        raise ValueError(
+            f"Unsupported output image type '{path.suffix}'. "
+            f"Supported types: {supported}"
+        )
+
+    if path.exists() and path.is_dir():
+        raise ValueError(f"Output path is a directory: {path}")
+
+    if not path.parent.exists():
+        raise FileNotFoundError(f"Output directory does not exist: {path.parent}")
+
+    if not path.parent.is_dir():
+        raise ValueError(f"Output parent path is not a directory: {path.parent}")
+
+    return path

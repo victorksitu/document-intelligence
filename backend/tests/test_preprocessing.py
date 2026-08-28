@@ -1,7 +1,27 @@
+from collections.abc import Generator
+from contextlib import contextmanager
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+import cv2
 import numpy as np
 import pytest
 
-from backend.app.preprocessing import preprocess_image, resize_if_needed, to_grayscale
+from backend.app.preprocessing import (
+    preprocess_image,
+    resize_if_needed,
+    save_processed_image,
+    to_grayscale,
+)
+
+
+@contextmanager
+def local_temp_dir() -> Generator[Path, None, None]:
+    with TemporaryDirectory(
+        prefix=".preprocessing-test-",
+        dir=Path(__file__).parent,
+    ) as directory:
+        yield Path(directory)
 
 
 def test_resize_if_needed_keeps_small_image_size() -> None:
@@ -54,3 +74,49 @@ def test_preprocess_image_resizes_then_converts_to_grayscale() -> None:
 
     assert processed.shape == (50, 100)
     assert processed.dtype == np.uint8
+
+
+def test_save_processed_image_writes_readable_png() -> None:
+    with local_temp_dir() as temp_dir:
+        output_path = temp_dir / "processed.png"
+        image = np.full((10, 20), fill_value=180, dtype=np.uint8)
+
+        saved_path = save_processed_image(image, output_path)
+        reloaded = cv2.imread(str(output_path), cv2.IMREAD_GRAYSCALE)
+
+        assert saved_path == output_path
+        assert output_path.exists()
+        assert reloaded is not None
+        assert reloaded.shape == image.shape
+        assert reloaded.dtype == np.uint8
+
+
+def test_save_processed_image_rejects_unsupported_extension() -> None:
+    with local_temp_dir() as temp_dir:
+        output_path = temp_dir / "processed.txt"
+        image = np.zeros((10, 20), dtype=np.uint8)
+
+        with pytest.raises(ValueError, match="Unsupported output image type"):
+            save_processed_image(image, output_path)
+
+
+def test_save_processed_image_rejects_missing_output_directory() -> None:
+    with local_temp_dir() as temp_dir:
+        output_path = temp_dir / "missing" / "processed.png"
+        image = np.zeros((10, 20), dtype=np.uint8)
+
+        with pytest.raises(FileNotFoundError, match="Output directory does not exist"):
+            save_processed_image(image, output_path)
+
+
+def test_save_processed_image_raises_when_opencv_save_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with local_temp_dir() as temp_dir:
+        output_path = temp_dir / "processed.png"
+        image = np.zeros((10, 20), dtype=np.uint8)
+
+        monkeypatch.setattr(cv2, "imwrite", lambda *_args: False)
+
+        with pytest.raises(ValueError, match="could not be saved"):
+            save_processed_image(image, output_path)
