@@ -25,6 +25,17 @@ def parse_args() -> Namespace:
         help="Maximum output height before grayscale conversion.",
     )
     parser.add_argument(
+        "--denoise",
+        action="store_true",
+        help="Apply a gentle median filter after grayscale conversion.",
+    )
+    parser.add_argument(
+        "--denoise-kernel-size",
+        type=int,
+        default=3,
+        help="Odd median filter size for denoising. Use 3 for a gentle default.",
+    )
+    parser.add_argument(
         "--threshold",
         action="store_true",
         help="Convert the grayscale image to black-and-white using a fixed cutoff.",
@@ -45,6 +56,8 @@ def main() -> None:
         args.output_path,
         max_width=args.max_width,
         max_height=args.max_height,
+        apply_denoise=args.denoise,
+        denoise_kernel_size=args.denoise_kernel_size,
         apply_threshold=args.threshold,
         threshold_value=args.threshold_value,
     )

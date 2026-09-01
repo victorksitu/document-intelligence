@@ -9,6 +9,8 @@ def preprocess_local_image(
     output_path: str | Path,
     max_width: int = 1600,
     max_height: int = 1600,
+    apply_denoise: bool = False,
+    denoise_kernel_size: int = 3,
     apply_threshold: bool = False,
     threshold_value: int = 127,
 ) -> Path:
@@ -18,6 +20,8 @@ def preprocess_local_image(
         image,
         max_width=max_width,
         max_height=max_height,
+        apply_denoise=apply_denoise,
+        denoise_kernel_size=denoise_kernel_size,
         apply_threshold=apply_threshold,
         threshold_value=threshold_value,
     )

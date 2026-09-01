@@ -77,16 +77,31 @@ def apply_binary_threshold(
     return thresholded
 
 
+def apply_median_denoise(image: np.ndarray, kernel_size: int = 3) -> np.ndarray:
+    """Reduce small speckle noise using a median filter."""
+    _validate_image_array(image)
+
+    if kernel_size < 3 or kernel_size % 2 == 0:
+        raise ValueError("kernel_size must be an odd integer greater than or equal to 3")
+
+    return cv2.medianBlur(image, kernel_size)
+
+
 def preprocess_image(
     image: np.ndarray,
     max_width: int = 1600,
     max_height: int = 1600,
+    apply_denoise: bool = False,
+    denoise_kernel_size: int = 3,
     apply_threshold: bool = False,
     threshold_value: int = 127,
 ) -> np.ndarray:
-    """Resize if needed, convert to grayscale, and optionally threshold."""
+    """Resize if needed, convert to grayscale, then optionally denoise and threshold."""
     resized = resize_if_needed(image, max_width=max_width, max_height=max_height)
     grayscale = to_grayscale(resized)
+
+    if apply_denoise:
+        grayscale = apply_median_denoise(grayscale, kernel_size=denoise_kernel_size)
 
     if apply_threshold:
         return apply_binary_threshold(grayscale, threshold_value=threshold_value)

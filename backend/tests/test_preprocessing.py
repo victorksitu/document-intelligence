@@ -9,6 +9,7 @@ import pytest
 
 from backend.app.preprocessing import (
     apply_binary_threshold,
+    apply_median_denoise,
     preprocess_image,
     resize_if_needed,
     save_processed_image,
@@ -106,6 +107,46 @@ def test_preprocess_image_can_apply_threshold_after_grayscale() -> None:
     processed = preprocess_image(image, apply_threshold=True, threshold_value=127)
 
     assert processed.tolist() == [[0, 255, 255]]
+
+
+def test_apply_median_denoise_reduces_single_pixel_noise() -> None:
+    image = np.full((5, 5), fill_value=200, dtype=np.uint8)
+    image[2, 2] = 0
+
+    denoised = apply_median_denoise(image, kernel_size=3)
+
+    assert denoised[2, 2] == 200
+    assert denoised.shape == image.shape
+    assert denoised.dtype == np.uint8
+
+
+def test_apply_median_denoise_rejects_even_kernel_size() -> None:
+    image = np.zeros((5, 5), dtype=np.uint8)
+
+    with pytest.raises(ValueError, match="kernel_size"):
+        apply_median_denoise(image, kernel_size=4)
+
+
+def test_apply_median_denoise_rejects_too_small_kernel_size() -> None:
+    image = np.zeros((5, 5), dtype=np.uint8)
+
+    with pytest.raises(ValueError, match="kernel_size"):
+        apply_median_denoise(image, kernel_size=1)
+
+
+def test_preprocess_image_can_denoise_before_thresholding() -> None:
+    image = np.full((5, 5), fill_value=200, dtype=np.uint8)
+    image[2, 2] = 0
+
+    processed = preprocess_image(
+        image,
+        apply_denoise=True,
+        denoise_kernel_size=3,
+        apply_threshold=True,
+        threshold_value=127,
+    )
+
+    assert processed.tolist() == np.full((5, 5), fill_value=255).tolist()
 
 
 def test_save_processed_image_writes_readable_png() -> None:
