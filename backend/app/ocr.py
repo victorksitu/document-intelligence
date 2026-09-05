@@ -1,8 +1,20 @@
 from collections.abc import Mapping, Sequence
 
+import cv2
+import numpy as np
+
 from backend.app.ocr_models import OCRBlock
 
 REQUIRED_TESSERACT_KEYS = ("text", "left", "top", "width", "height", "conf")
+
+
+def extract_text_blocks(image: np.ndarray) -> list[OCRBlock]:
+    """Run OCR on an OpenCV image and return normalized OCR blocks."""
+    _validate_ocr_image(image)
+    tesseract_image = _prepare_image_for_tesseract(image)
+    data = _image_to_tesseract_data(tesseract_image)
+
+    return normalize_tesseract_data(data)
 
 
 def normalize_tesseract_data(data: Mapping[str, Sequence[object]]) -> list[OCRBlock]:
@@ -24,6 +36,42 @@ def normalize_tesseract_data(data: Mapping[str, Sequence[object]]) -> list[OCRBl
             blocks.append(block)
 
     return blocks
+
+
+def _validate_ocr_image(image: np.ndarray) -> None:
+    if not isinstance(image, np.ndarray):
+        raise TypeError("image must be a NumPy array")
+
+    if image.size == 0:
+        raise ValueError("image must not be empty")
+
+    if image.ndim == 2:
+        return
+
+    if image.ndim == 3 and image.shape[2] == 3:
+        return
+
+    raise ValueError("image must be a grayscale or 3-channel color image")
+
+
+def _prepare_image_for_tesseract(image: np.ndarray) -> np.ndarray:
+    if image.ndim == 2:
+        return image
+
+    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+
+def _image_to_tesseract_data(image: np.ndarray) -> Mapping[str, Sequence[object]]:
+    try:
+        import pytesseract
+        from pytesseract import Output
+    except ImportError as exc:
+        raise RuntimeError("pytesseract is required to run OCR") from exc
+
+    try:
+        return pytesseract.image_to_data(image, output_type=Output.DICT)
+    except pytesseract.pytesseract.TesseractNotFoundError as exc:
+        raise RuntimeError("Tesseract OCR is not installed or is not on PATH") from exc
 
 
 def _validate_tesseract_data(data: Mapping[str, Sequence[object]]) -> None:
